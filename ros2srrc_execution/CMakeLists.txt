@@ -34,7 +34,7 @@ find_package(rclcpp REQUIRED)
 find_package(ros2srrc_data REQUIRED)
 
 # REQUIRED to -> Include linkattacher_msgs package:
-find_package(linkattacher_msgs REQUIRED)
+# find_package(linkattacher_msgs REQUIRED)
 
 # REQUIRED to -> Execute ACTIONS:
 find_package(rclcpp_action REQUIRED)
@@ -48,48 +48,48 @@ find_package(ament_index_cpp REQUIRED)
 find_package(abb_robot_msgs REQUIRED)
 
 # REQUIRED to -> Robotiq:
-find_package(ros2_robotiqgripper REQUIRED)
+# find_package(ros2_robotiqgripper REQUIRED)
 
 # Add include directories:
 include_directories(include)
 
 # Add executable:
-add_executable(
-  move
-  src/moveg.cpp
-  src/moverp.cpp
-  src/moverot.cpp
-  src/mover.cpp
-  src/movel.cpp
-  src/movej.cpp
-  src/move.cpp
-)
-add_executable(
-  robmove
-  src/robmove.cpp
-)
-add_executable(
-  robpose
-  src/robpose.cpp
-)
+# add_executable(
+#   move
+#   src/moveg.cpp
+#   src/moverp.cpp
+#   src/moverot.cpp
+#   src/mover.cpp
+#   src/movel.cpp
+#   src/movej.cpp
+#   src/move.cpp
+# )
+# add_executable(
+#   robmove
+#   src/robmove.cpp
+# )
+# add_executable(
+#   robpose
+#   src/robpose.cpp
+# )
 
 # Link directories:
 include_directories(${YAML_CPP_INCLUDE_DIR})
-target_link_libraries(move ${YAML_CPP_LIBRARIES})
+# target_link_libraries(move ${YAML_CPP_LIBRARIES})
 
 # Install executable:
-install(TARGETS
-  move
-  DESTINATION lib/${PROJECT_NAME}
-)
-install(TARGETS
-  robmove
-  DESTINATION lib/${PROJECT_NAME}
-)
-install(TARGETS
-  robpose
-  DESTINATION lib/${PROJECT_NAME}
-)
+# install(TARGETS
+#   move
+#   DESTINATION lib/${PROJECT_NAME}
+# )
+# install(TARGETS
+#   robmove
+#   DESTINATION lib/${PROJECT_NAME}
+# )
+# install(TARGETS
+#   robpose
+#   DESTINATION lib/${PROJECT_NAME}
+# )
 
 # Install header files:
 install(
@@ -98,32 +98,32 @@ install(
 )
 
 # Add ament dependencies:
-ament_target_dependencies(
-  move
-  rclcpp
-  moveit_ros_planning_interface
-  std_msgs
-  rclcpp_action
-  ros2srrc_data
-  abb_robot_msgs
-  yaml-cpp
-  ament_index_cpp
-)
-ament_target_dependencies(
-  robmove
-  rclcpp
-  moveit_ros_planning_interface
-  std_msgs
-  rclcpp_action
-  ros2srrc_data
-)
-ament_target_dependencies(
-  robpose
-  rclcpp
-  moveit_ros_planning_interface
-  std_msgs
-  ros2srrc_data
-)
+# ament_target_dependencies(
+#   move
+#   rclcpp
+#   moveit_ros_planning_interface
+#   std_msgs
+#   rclcpp_action
+#   ros2srrc_data
+#   abb_robot_msgs
+#   yaml-cpp
+#   ament_index_cpp
+# )
+# ament_target_dependencies(
+#   robmove
+#   rclcpp
+#   moveit_ros_planning_interface
+#   std_msgs
+#   rclcpp_action
+#   ros2srrc_data
+# )
+# ament_target_dependencies(
+#   robpose
+#   rclcpp
+#   moveit_ros_planning_interface
+#   std_msgs
+#   ros2srrc_data
+# )
 
 # =========================================================== #
 # REQUIRED TO EXECUTE .py scripts:
