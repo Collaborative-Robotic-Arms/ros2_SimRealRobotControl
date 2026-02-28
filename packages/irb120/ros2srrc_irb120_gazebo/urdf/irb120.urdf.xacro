@@ -59,9 +59,8 @@
     
     <gazebo>
       <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
-        <robot_sim_type>gazebo_ros2_control/GazeboSystem</robot_sim_type>
+        <robot_sim_type>gz_ros2_control/GazeboSimSystem</robot_sim_type>
 
-        <!-- IRB120 Controller -->
         <parameters>$(find ros2srrc_robots)/irb120/config/controller.yaml</parameters>
 
       </plugin>

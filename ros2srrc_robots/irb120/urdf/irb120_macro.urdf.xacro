@@ -39,7 +39,7 @@
 #                                                                                       #
 #  COPYRIGHT - ROS-Industrial                                                           #
 #  (ORIGINAL LICENSE) -> Licensed under the Apache-2.0 License.                         #
-#                                                                                       #
+#                     abb_table                                                                  #
 #  CHANGES MADE:                                                                        #
 #  The original files contain the .urdf information of the robot for ROS1, and these    #
 #  have been modified for ROS2.                                                         #
@@ -300,6 +300,16 @@
       <axis xyz="1 0 0"/>
       <dynamics damping="1.0" friction="1.0"/>
     </joint>
+
+    <!-- joint_6 modified -->
+     <!-- <joint name="joint_6" type="revolute">
+      <origin rpy="0 0 0" xyz="0.072 0 0"/>
+      <parent link="link_5"/>
+      <child link="link_6"/>
+      <limit effort="1000" lower="-3.14" upper="3.14" velocity="7.33038"/>
+      <axis xyz="1 0 0"/>
+      <dynamics damping="1.0" friction="1.0"/>
+    </joint> -->
     <!-- end of joint list -->
 
     <!-- ROS-Industrial 'base' frame: base_link to ABB World Coordinates transform -->

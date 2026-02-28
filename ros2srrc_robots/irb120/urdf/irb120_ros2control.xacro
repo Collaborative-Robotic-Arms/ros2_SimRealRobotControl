@@ -58,33 +58,33 @@
 
     <!-- 1. ROS2_CONTROL tag name: -->
     <!-- A. GAZEBO SIMULATION: -->
-    <xacro:unless value="${bringup}">
-      <xacro:property name="name" value="GazeboSystem"/>
-    </xacro:unless>
+    <!-- <xacro:unless value="${bringup}"> -->
+      <!-- <xacro:property name="name" value="GazeboSimSystem"/> -->
+    <!-- </xacro:unless> -->
     <!-- B. ROBOT BRINGUP: -->
-    <xacro:if value="${bringup}">
-      <xacro:property name="name" value="ABBMultiInterfaceHardware"/>
-    </xacro:if>
+    <!-- <xacro:if value="${bringup}"> -->
+    <xacro:property name="name" value="ABBMultiInterfaceHardware"/>
+    <!-- </xacro:if> -->
 
     <!-- 3. Load ROS2_CONTROL: -->
     <ros2_control name="${name}" type="system">
 
       <!-- A. GAZEBO SIMULATION: -->
-      <xacro:unless value="${bringup}">
+      <!-- <xacro:unless value="${bringup}">
         <hardware>
-          <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
         </hardware>
-      </xacro:unless>
+      </xacro:unless> -->
 
       <!-- B. ROBOT BRINGUP: -->
-      <xacro:if value="${bringup}">
+      <!-- <xacro:if value="${bringup}"> -->
         <hardware>
           <plugin>abb_hardware_interface/ABBSystemHardware</plugin>
           <param name="rws_port">80</param>
           <param name="rws_ip">${robot_ip}</param>
           <param name="egm_port">6511</param>
         </hardware>
-      </xacro:if>
+      <!-- </xacro:if> -->
 
       <!-- irb120_joint1 -->
       <joint name="joint_1">
@@ -153,7 +153,7 @@
       <!-- irb120_joint5 -->
       <joint name="joint_5">
         <command_interface name="position">
-          <param name="min">-2.00</param>       <!-- Joint5 limits lowered to +-2rad -->
+          <param name="min">-2.00</param>     
           <param name="max">2.00</param>
         </command_interface>
         <command_interface name="velocity">
@@ -161,7 +161,7 @@
           <param name="max">5.58505</param>
         </command_interface>
         <state_interface name="position">
-          <param name="initial_value">1.570796</param>
+          <param name="initial_value">0.0</param>
         </state_interface>
         <state_interface name="velocity"/>
       </joint>
@@ -185,7 +185,7 @@
       <!-- END EFFECTOR -->
       <xacro:unless value="${bringup}">
         <xacro:if value="${EE}">
-          <xacro:include filename="$(find ros2srrc_endeffectors)/${EE_name}/urdf/${EE_name}_ros2control.xacro" />
+          <xacro:include filename="$(find my_new_GRIPPER_package)/${EE_name}/urdf/${EE_name}_ros2control.xacro" />
           <xacro:EE_ros2control />
         </xacro:if>
       </xacro:unless>

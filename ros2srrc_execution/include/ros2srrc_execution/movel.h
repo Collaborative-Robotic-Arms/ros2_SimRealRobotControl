@@ -41,7 +41,7 @@
 
 // Include MoveIt!2:
 #include <moveit/move_group_interface/move_group_interface_improved.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.hpp>
 
 // Include the move ROS2 ACTION:
 #include "ros2srrc_data/action/move.hpp"

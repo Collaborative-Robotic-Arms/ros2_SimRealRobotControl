@@ -100,8 +100,8 @@ def GetEEctr(EEName):
     
     RESULT = []
 
-    PATH = os.path.join(os.path.expanduser('~'), 'dev_ws', 'src', 'ros2_SimRealRobotControl', 'ros2srrc_endeffectors', EEName, 'config')
-    YAML_PATH = PATH + "/controller_moveit2.yaml"
+    PATH = os.path.join(os.path.expanduser('~'), 'gp_ws', 'src', 'ros2_SimRealRobotControl', 'ros2srrc_endeffectors', EEName, 'config')
+    YAML_PATH = PATH + "/moveit_controller.yaml"
     
     with open(YAML_PATH, 'r') as YAML:
         cYAML = yaml.safe_load(YAML)
@@ -173,19 +173,6 @@ def generate_launch_description():
     print(CONFIGURATION["ID"] + " -> " + CONFIGURATION["Name"])
     print("")
 
-    # UR_ROBOT_DRIVER variables: 
-    urcl_path = os.path.join(get_package_share_directory('ur_client_library'))
-    script_filename = os.path.join(urcl_path,
-                              'resources',
-                              'external_control.urscript')
-    ur_path = os.path.join(get_package_share_directory('ur_robot_driver'))
-    input_recipe_filename = os.path.join(ur_path,
-                              'resources',
-                              'rtde_input_recipe.txt')
-    output_recipe_filename = os.path.join(ur_path,
-                              'resources',
-                              'rtde_output_recipe.txt')
-
     # ***** ROBOT DESCRIPTION ***** #
     # Robot Description file package:
     robot_description_path = os.path.join(get_package_share_directory(PACKAGE_NAME + '_gazebo'))
@@ -204,11 +191,7 @@ def generate_launch_description():
         "EE_name": CONFIGURATION["ee"],
 
         "robot_ip": robot_ip,
-        "bringup": "true",
-
-        "script_filename": script_filename,
-        "input_recipe_filename": input_recipe_filename,
-        "output_recipe_filename": output_recipe_filename,
+        "bringup": "true"
     })
     
     robot_description_config = doc.toxml()
@@ -235,7 +218,7 @@ def generate_launch_description():
     # ***** CONTROLLERS ***** #
 
     # ros2_control:
-    ros2_controllers_path = os.path.join(get_package_share_directory("ros2srrc_robots"), CONFIGURATION["rob"], "config", "controller_ur.yaml")
+    ros2_controllers_path = os.path.join(get_package_share_directory("ros2srrc_robots"), CONFIGURATION["rob"], "config", "controller.yaml")
     ros2_control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -243,35 +226,17 @@ def generate_launch_description():
         output="both"
     )
 
-    # IO and STATUS CONTROLLER:
-    io_and_status_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["io_and_status_controller", "--controller-manager", "/controller_manager"],
-    )
     # Joint STATE BROADCASTER:
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
     )
-    # Speed scaling STATE BROADCASTER:
-    speed_scaling_state_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["speed_scaling_state_broadcaster", "--controller-manager", "/controller_manager"],
-    )
     # Joint TRAJECTORY Controller:
     joint_trajectory_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_trajectory_controller", "-c", "/controller_manager"],
-    )
-    # Joint (SCALED) TRAJECTORY Controller:
-    scaled_joint_trajectory_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["scaled_joint_trajectory_controller", "-c", "/controller_manager"],
     )
 
     # *********************** MoveIt!2 *********************** #   
@@ -287,6 +252,7 @@ def generate_launch_description():
 
     # Kinematics.yaml file:
     kinematics_yaml = load_yaml("ros2srrc_robots", CONFIGURATION["rob"] + "/config/kinematics.yaml")
+    print("kinematics yaml: ", kinematics_yaml)
     robot_description_kinematics = {"robot_description_kinematics": kinematics_yaml}
 
     # joint_limits.yaml file:
@@ -307,8 +273,6 @@ def generate_launch_description():
 
     # MoveIt!2 Controllers:
     moveit_simple_controllers_yaml = load_yaml("ros2srrc_robots", CONFIGURATION["rob"] + "/config/controller_moveit2.yaml")
-    moveit_simple_controllers_yaml["joint_trajectory_controller"]["default"] = False
-    moveit_simple_controllers_yaml["scaled_joint_trajectory_controller"]["default"] = True
 
     # MoveIt!2 Parameters:
     moveit_controllers = {
@@ -317,7 +281,7 @@ def generate_launch_description():
     }
     trajectory_execution = {
         "moveit_manage_controllers": True,
-        "trajectory_execution.allowed_execution_duration_scaling": 10.0, # Value increased to accommodate the "decreased" joint limits.
+        "trajectory_execution.allowed_execution_duration_scaling": 1.2,
         "trajectory_execution.allowed_goal_duration_margin": 0.5,
         "trajectory_execution.allowed_start_tolerance": 0.01,
     }
@@ -327,11 +291,13 @@ def generate_launch_description():
         "publish_state_updates": True,
         "publish_transforms_updates": True,
     }
+    # FIXED (Correct)
     move_group_capabilities = {
-        "capabilities": """pilz_industrial_motion_planner/MoveGroupSequenceAction \
-            pilz_industrial_motion_planner/MoveGroupSequenceService"""
+        "capabilities": [
+            "pilz_industrial_motion_planner/MoveGroupSequenceAction",
+            "pilz_industrial_motion_planner/MoveGroupSequenceService"
+        ]
     }
-
     # MoveGroup Node:
     run_move_group_node = Node(
         package="moveit_ros_move_group",
@@ -384,6 +350,22 @@ def generate_launch_description():
         ]
     )
 
+    # ============================================= #
+    # ============== ABB: RWS CLIENT ============== #
+    rws_client = Node(
+        package="abb_rws_client",
+        executable="rws_client",
+        name="rws_client",
+        output="screen",
+        parameters=[
+            {"robot_ip": robot_ip},
+            {"robot_port": 80},
+            {"robot_nickname": "ROB_1"},
+            {"polling_rate": 4.0},
+            {"no_connection_timeout": False},
+        ],
+    )
+
     # =================================================================================================== #
     # ============================= ros2srrc_execution -> CUSTOM INTERFACES ============================= #
 
@@ -417,17 +399,15 @@ def generate_launch_description():
     # Add ROS 2 Nodes to LaunchDescription() element:
     LD.add_action(node_robot_state_publisher)
     LD.add_action(static_tf)
+    LD.add_action(rws_client)
     
     LD.add_action(ros2_control_node)
-    LD.add_action(io_and_status_controller_spawner)
     LD.add_action(joint_state_broadcaster_spawner)
-    LD.add_action(speed_scaling_state_broadcaster_spawner)
-    #LD.add_action(joint_trajectory_controller_spawner)
-    LD.add_action(scaled_joint_trajectory_controller_spawner)
+    LD.add_action(joint_trajectory_controller_spawner)
 
     LD.add_action(RegisterEventHandler(
         OnProcessExit(
-            target_action = scaled_joint_trajectory_controller_spawner,
+            target_action = joint_trajectory_controller_spawner,
             on_exit = [
                 
                 # MoveIt!2:
@@ -446,7 +426,7 @@ def generate_launch_description():
 
     LD.add_action(RegisterEventHandler(
         OnProcessExit(
-            target_action = scaled_joint_trajectory_controller_spawner,
+            target_action = joint_trajectory_controller_spawner,
             on_exit = [
                 
                 # Interfaces:

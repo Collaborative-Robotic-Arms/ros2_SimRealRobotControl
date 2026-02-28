@@ -1,29 +1,3 @@
-#!/usr/bin/python3
-
-# ===================================== COPYRIGHT ===================================== #
-#                                                                                       #
-#  IFRA (Intelligent Flexible Robotics and Assembly) Group, CRANFIELD UNIVERSITY        #
-#  Created on behalf of the IFRA Group at Cranfield University, United Kingdom          #
-#  E-mail: IFRA@cranfield.ac.uk                                                         #
-#                                                                                       #
-#  Licensed under the Apache-2.0 License.                                               #
-#  You may not use this file except in compliance with the License.                     #
-#  You may obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0  #
-#                                                                                       #
-#  Unless required by applicable law or agreed to in writing, software distributed      #
-#  under the License is distributed on an "as-is" basis, without warranties or          #
-#  conditions of any kind, either express or implied. See the License for the specific  #
-#  language governing permissions and limitations under the License.                    #
-#                                                                                       #
-#  IFRA Group - Cranfield University                                                    #
-#  AUTHORS: Mikel Bueno Viso - Mikel.Bueno-Viso@cranfield.ac.uk                         #
-#           Dr. Seemal Asif  - s.asif@cranfield.ac.uk                                   #
-#           Prof. Phil Webb  - p.f.webb@cranfield.ac.uk                                 #
-#                                                                                       #
-#  Date: June, 2024.                                                                    #
-#                                                                                       #
-# ===================================== COPYRIGHT ===================================== #
-
 # ======= CITE OUR WORK ======= #
 # You can cite our work with the following statement:
 # IFRA-Cranfield (2023) ROS 2 Sim-to-Real Robot Control. URL: https://github.com/IFRA-Cranfield/ros2_SimRealRobotControl.
@@ -47,7 +21,7 @@ def load_file(package_name, file_path):
         with open(absolute_file_path, 'r') as file:
             return file.read()
     except EnvironmentError:
-        # parent of IOError, OSError *and* WindowsError where available.
+        # parent of IOError, OSError and WindowsError where available.
         return None
 # LOAD YAML:
 def load_yaml(package_name, file_path):
@@ -57,7 +31,7 @@ def load_yaml(package_name, file_path):
         with open(absolute_file_path, 'r') as file:
             return yaml.safe_load(file)
     except EnvironmentError:
-        # parent of IOError, OSError *and* WindowsError where available.
+        # parent of IOError, OSError and WindowsError where available.
         return None
 
 # ===== REQUIRED TO GET THE ROBOT CONFIGURATION === #
@@ -100,7 +74,7 @@ def GetEEctr(EEName):
     
     RESULT = []
 
-    PATH = os.path.join(os.path.expanduser('~'), 'dev_ws', 'src', 'ros2_SimRealRobotControl', 'ros2srrc_endeffectors', EEName, 'config')
+    PATH = os.path.join(os.path.expanduser('~'), 'gp_ws', 'src', 'ros2_SimRealRobotControl', 'ros2srrc_endeffectors', EEName, 'config')
     YAML_PATH = PATH + "/controller_moveit2.yaml"
     
     with open(YAML_PATH, 'r') as YAML:
@@ -111,7 +85,8 @@ def GetEEctr(EEName):
 
     return(RESULT)
 
-# ========== **GENERATE LAUNCH DESCRIPTION** ========== #
+
+# ========== *GENERATE LAUNCH DESCRIPTION* ========== #
 def generate_launch_description():
 
     LD = LaunchDescription()
@@ -173,26 +148,15 @@ def generate_launch_description():
     print(CONFIGURATION["ID"] + " -> " + CONFIGURATION["Name"])
     print("")
 
-    # UR_ROBOT_DRIVER variables: 
-    urcl_path = os.path.join(get_package_share_directory('ur_client_library'))
-    script_filename = os.path.join(urcl_path,
-                              'resources',
-                              'external_control.urscript')
-    ur_path = os.path.join(get_package_share_directory('ur_robot_driver'))
-    input_recipe_filename = os.path.join(ur_path,
-                              'resources',
-                              'rtde_input_recipe.txt')
-    output_recipe_filename = os.path.join(ur_path,
-                              'resources',
-                              'rtde_output_recipe.txt')
-
-    # ***** ROBOT DESCRIPTION ***** #
+    # ** ROBOT DESCRIPTION ** #
     # Robot Description file package:
     robot_description_path = os.path.join(get_package_share_directory(PACKAGE_NAME + '_gazebo'))
     # ROBOT urdf file path:
     xacro_file = os.path.join(robot_description_path,'urdf',CONFIGURATION["urdf"])
+    
     # Generate ROBOT_DESCRIPTION variable:
     doc = xacro.parse(open(xacro_file))
+    #doc_urdf = os.path.join(robot_description_path,'urdf','irb120.urdf')
     
     if CONFIGURATION["ee"] == "none":
         EE = "false"
@@ -204,16 +168,14 @@ def generate_launch_description():
         "EE_name": CONFIGURATION["ee"],
 
         "robot_ip": robot_ip,
-        "bringup": "true",
-
-        "script_filename": script_filename,
-        "input_recipe_filename": input_recipe_filename,
-        "output_recipe_filename": output_recipe_filename,
+        "bringup": "true"
     })
     
+    #with open(doc_urdf, 'r') as file:
+     #   robot_description_config = file.read()
     robot_description_config = doc.toxml()
     robot_description = {'robot_description': robot_description_config}
-
+    print("xacro_file: ", xacro_file)
     # ROBOT STATE PUBLISHER NODE:
     node_robot_state_publisher = Node(
         package='robot_state_publisher',
@@ -232,51 +194,41 @@ def generate_launch_description():
         arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "world", "base_link"],
     )
 
-    # ***** CONTROLLERS ***** #
+    # ** CONTROLLERS ** #
 
     # ros2_control:
-    ros2_controllers_path = os.path.join(get_package_share_directory("ros2srrc_robots"), CONFIGURATION["rob"], "config", "controller_ur.yaml")
+    ros2_controllers_path = os.path.join(get_package_share_directory("ros2srrc_robots"), CONFIGURATION["rob"], "config", "controller.yaml")
     ros2_control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
         parameters=[robot_description, ros2_controllers_path],
-        output="both"
+        output="both",
+        #arguments=["--ros-args", "--log-level", "debug"],
     )
-
-    # IO and STATUS CONTROLLER:
-    io_and_status_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["io_and_status_controller", "--controller-manager", "/controller_manager"],
-    )
+#load the controller manager with the controllers created 
+    controller_manager_node = Node(
+           package='controller_manager',
+            executable='spawner',
+            
+            arguments=['joint_state_broadcaster', 'irb120_controller'],
+            output='screen'
+        )
     # Joint STATE BROADCASTER:
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
     )
-    # Speed scaling STATE BROADCASTER:
-    speed_scaling_state_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["speed_scaling_state_broadcaster", "--controller-manager", "/controller_manager"],
-    )
     # Joint TRAJECTORY Controller:
     joint_trajectory_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_trajectory_controller", "-c", "/controller_manager"],
-    )
-    # Joint (SCALED) TRAJECTORY Controller:
-    scaled_joint_trajectory_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["scaled_joint_trajectory_controller", "-c", "/controller_manager"],
+        arguments=["irb120_controller", "-c", "/controller_manager"],
     )
 
-    # *********************** MoveIt!2 *********************** #   
+    # ******** MoveIt!2 ******** #   
 
-    # *** PLANNING CONTEXT *** #
+    # * PLANNING CONTEXT * #
     # Robot description, SRDF:
     if EE == "false":
         robot_description_semantic_config = load_file(PACKAGE_NAME + "_moveit2", "config/" + CONFIGURATION["rob"] + ".srdf")
@@ -293,22 +245,27 @@ def generate_launch_description():
     joint_limits_yaml = load_yaml("ros2srrc_robots", CONFIGURATION["rob"] + "/config/joint_limits.yaml")
     joint_limits = {'robot_description_planning': joint_limits_yaml}
 
-    # pilz_planning_pipeline_config.yaml file:
-    pilz_planning_pipeline_config = {
+    ompl_planning = load_yaml("ros2srrc_robots", CONFIGURATION["rob"] + "/config/ompl_planning.yaml")
+    #pilz_cartesian_limits = {'robot_description_planning': pilz_cartesian_limits_yaml}
+    # Define simple OMPL config without loading external file
+    ompl_planning_pipeline_config = {
         "move_group": {
-            "planning_plugin": "pilz_industrial_motion_planner/CommandPlanner",
-            "request_adapters": """ """,
+            "planning_plugin": "ompl_interface/OMPLPlanner",
+            "request_adapters": [
+                "default_planner_request_adapters/AddTimeOptimalParameterization",
+                "default_planner_request_adapters/FixWorkspaceBounds",
+                "default_planner_request_adapters/FixStartStateBounds",
+                "default_planner_request_adapters/FixStartStateCollision",
+                "default_planner_request_adapters/FixStartStatePathConstraints"
+            ],
             "start_state_max_bounds_error": 0.1,
-            "default_planner_config": "PTP",
         }
     }
-    pilz_cartesian_limits_yaml = load_yaml("ros2srrc_robots", CONFIGURATION["rob"] + "/config/pilz_cartesian_limits.yaml")
-    pilz_cartesian_limits = {'robot_description_planning': pilz_cartesian_limits_yaml}
+    ompl_planning_pipeline_config["move_group"].update(ompl_planning)
+    print("xacro_file: ", xacro_file)
 
     # MoveIt!2 Controllers:
     moveit_simple_controllers_yaml = load_yaml("ros2srrc_robots", CONFIGURATION["rob"] + "/config/controller_moveit2.yaml")
-    moveit_simple_controllers_yaml["joint_trajectory_controller"]["default"] = False
-    moveit_simple_controllers_yaml["scaled_joint_trajectory_controller"]["default"] = True
 
     # MoveIt!2 Parameters:
     moveit_controllers = {
@@ -317,7 +274,7 @@ def generate_launch_description():
     }
     trajectory_execution = {
         "moveit_manage_controllers": True,
-        "trajectory_execution.allowed_execution_duration_scaling": 10.0, # Value increased to accommodate the "decreased" joint limits.
+        "trajectory_execution.allowed_execution_duration_scaling": 1.2,
         "trajectory_execution.allowed_goal_duration_margin": 0.5,
         "trajectory_execution.allowed_start_tolerance": 0.01,
     }
@@ -340,17 +297,17 @@ def generate_launch_description():
         parameters=[
             robot_description,
             robot_description_semantic,
-            kinematics_yaml,
+            robot_description_kinematics,
             
-            pilz_planning_pipeline_config,
+            ompl_planning_pipeline_config,
 
             joint_limits,
-            pilz_cartesian_limits,
+            #pilz_cartesian_limits,
 
             trajectory_execution,
             moveit_controllers,
             planning_scene_monitor_parameters,
-            move_group_capabilities,
+            #move_group_capabilities,
         ],
     )
 
@@ -364,70 +321,62 @@ def generate_launch_description():
     rviz_node_full = Node(
         package="rviz2",
         executable="rviz2",
-        name="rviz2",
+        name="rviz2_node",
         output="log",
         arguments=["-d", rviz_full_config],
         parameters=[
             robot_description,
             robot_description_semantic,
-            kinematics_yaml,
+            robot_description_kinematics,
             
-            pilz_planning_pipeline_config,
+            #ompl_planning_pipeline_config,
 
-            joint_limits,
-            pilz_cartesian_limits,
+            #joint_limits,
+            #pilz_cartesian_limits,
 
-            trajectory_execution,
-            moveit_controllers,
-            planning_scene_monitor_parameters,
-            move_group_capabilities,
+            #trajectory_execution,
+            #moveit_controllers,
+            #planning_scene_monitor_parameters,
+         #   move_group_capabilities,
         ]
     )
 
-    # =================================================================================================== #
-    # ============================= ros2srrc_execution -> CUSTOM INTERFACES ============================= #
-
-    # Move:
-    MoveInterface = Node(
-        name="move",
-        package="ros2srrc_execution",
-        executable="move",
+    # ============================================= #
+    # ============== ABB: RWS CLIENT ============== #
+    rws_client = Node(
+        package="abb_rws_client",
+        executable="rws_client",
+        name="rws_client",
         output="screen",
-        parameters=[robot_description, robot_description_semantic, kinematics_yaml, {"ROB_PARAM": CONFIGURATION["rob"]}, {"EE_PARAM": "none"}, {"ENV_PARAM": "bringup"}],
-    )
-    # RobMove and RobPose:
-    RobMoveInterface = Node(
-        name="robmove",
-        package="ros2srrc_execution",
-        executable="robmove",
-        output="screen",
-        parameters=[robot_description, robot_description_semantic, kinematics_yaml, {"ROB_PARAM": CONFIGURATION["rob"]}],
-    )
-    RobPoseInterface = Node(
-        name="robpose",
-        package="ros2srrc_execution",
-        executable="robpose",
-        output="screen",
-        parameters=[robot_description, robot_description_semantic, kinematics_yaml, {"ROB_PARAM": CONFIGURATION["rob"]}],
+        parameters=[
+            {"robot_ip": robot_ip},
+            {"robot_port": 80},
+            {"robot_nickname": "ROB_1"},
+            {"polling_rate": 5.0},
+            {"no_connection_timeout": False},
+            
+        ],
+        #arguments=["--ros-args", "--log-level", "debug"],
     )
 
+    
     # =============================================== #
     # ========== RETURN LAUNCH DESCRIPTION ========== #
 
     # Add ROS 2 Nodes to LaunchDescription() element:
     LD.add_action(node_robot_state_publisher)
     LD.add_action(static_tf)
+    LD.add_action(rws_client)
     
     LD.add_action(ros2_control_node)
-    LD.add_action(io_and_status_controller_spawner)
+    
+
     LD.add_action(joint_state_broadcaster_spawner)
-    LD.add_action(speed_scaling_state_broadcaster_spawner)
-    #LD.add_action(joint_trajectory_controller_spawner)
-    LD.add_action(scaled_joint_trajectory_controller_spawner)
+    LD.add_action(joint_trajectory_controller_spawner)
 
     LD.add_action(RegisterEventHandler(
         OnProcessExit(
-            target_action = scaled_joint_trajectory_controller_spawner,
+            target_action = joint_trajectory_controller_spawner,
             on_exit = [
                 
                 # MoveIt!2:
@@ -443,26 +392,7 @@ def generate_launch_description():
             )
         )
     )
+    
 
-    LD.add_action(RegisterEventHandler(
-        OnProcessExit(
-            target_action = scaled_joint_trajectory_controller_spawner,
-            on_exit = [
-                
-                # Interfaces:
-                TimerAction(
-                    period=5.0,
-                    actions=[
-                        MoveInterface,
-                        RobMoveInterface,
-                        RobPoseInterface,
-                    ]
-                ),
-                
-                ]
-            )
-        )
-    )
-
-    # ***** RETURN  ***** #
+    # ** RETURN  ** #
     return(LD)

@@ -160,13 +160,6 @@ def generate_launch_description():
         print("Closing... BYE!")
         exit()   
 
-    # === INPUT ARGUMENT: HMI === #
-    HMI = AssignArgument("hmi")
-    if HMI == "True" or HMI == "true":
-        HMI = "true"
-    else:
-        HMI = "false"
-
     # ========== CELL INFORMATION ========== #
     print("")
     print("===== GAZEBO: Robot Simulation (" + PACKAGE_NAME + "_gazebo) =====")
@@ -182,7 +175,7 @@ def generate_launch_description():
         PACKAGE_NAME + '.world')
     # DECLARE Gazebo LAUNCH file:
     gazebo = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('gz_ros2'), 'launch'), '/gazebo.launch.py']),
+                PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('gazebo_ros'), 'launch'), '/gazebo.launch.py']),
                 launch_arguments={'world': robot_gazebo}.items(),
             )
 
@@ -193,7 +186,7 @@ def generate_launch_description():
     xacro_file = os.path.join(robot_description_path,'urdf',CONFIGURATION["urdf"])
     # Generate ROBOT_DESCRIPTION variable:
     doc = xacro.parse(open(xacro_file))
-    print("urdf file: ", doc.toxml())
+    
     if CONFIGURATION["ee"] == "none":
         EE = "false"
     else:
@@ -202,7 +195,6 @@ def generate_launch_description():
     xacro.process_doc(doc, mappings={
         "EE": EE,
         "EE_name": CONFIGURATION["ee"],
-        "hmi": HMI,
     })
     
     # EE -> Controller file needed?
@@ -225,7 +217,7 @@ def generate_launch_description():
     )
 
     # SPAWN ROBOT TO GAZEBO:
-    spawn_entity = Node(package='gz_ros2', executable='spawn_entity.py',
+    spawn_entity = Node(package='gazebo_ros', executable='spawn_entity.py',
                         arguments=['-topic', 'robot_description','-entity', CONFIGURATION["rob"]],
                         output='both')
 
