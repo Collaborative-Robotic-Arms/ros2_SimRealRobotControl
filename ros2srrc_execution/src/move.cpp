@@ -71,8 +71,8 @@ std::string param_EE = "none";
 std::string param_ENV = "none";
 
 // Declaration of GLOBAL VARIABLES --> MoveIt!2 Interface:
-moveit::planning_interface::MoveGroupInterface move_group_interface_ROB;
-moveit::planning_interface::MoveGroupInterface move_group_interface_EE;
+std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_ROB;
+std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_EE;
 
 // Declaration of GLOBAL VARIABLES --> JointModelGroup:
 const moveit::core::JointModelGroup* joint_model_group_ROB;
@@ -121,7 +121,7 @@ private:
 moveit::planning_interface::MoveGroupInterface::Plan plan_ROB() {
     
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    bool success = (move_group_interface_ROB.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    bool success = (move_group_interface_ROB->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
 
     // Execute the plan
     if (success)
@@ -140,7 +140,7 @@ moveit::planning_interface::MoveGroupInterface::Plan plan_ROB() {
 moveit::planning_interface::MoveGroupInterface::Plan plan_EE() {
     
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    bool success = (move_group_interface_EE.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    bool success = (move_group_interface_EE->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
 
     // Execute the plan
     if (success)
@@ -222,10 +222,10 @@ private:
         // We call the -> void moveit::planning_interface::MoveGroupInterface::stop(void) method,
         // which stops any trajectory execution, if one is active.
         if (param_ROB != "none"){
-            move_group_interface_ROB.stop();
+            move_group_interface_ROB->stop();
         }
         if (param_EE != "none" && param_ENV != "bringup"){
-            move_group_interface_EE.stop();
+            move_group_interface_EE->stop();
         }
 
         (void)goal_handle;
@@ -250,17 +250,17 @@ private:
             
             // 1. Define JP VECTOR:
             std::vector<double> JP;
-            moveit::core::RobotStatePtr current_state = move_group_interface_ROB.getCurrentState(10);
+            moveit::core::RobotStatePtr current_state = move_group_interface_ROB->getCurrentState(10);
             current_state->copyJointGroupPositions(joint_model_group_ROB, JP);
             
             // 2. CALL MoveJAction for CALCULATIONS:
             MoveJSTRUCT MoveJRES = MoveJAction(goal->movej, JP, robotSPECS);
             JP = MoveJRES.JP;
-            move_group_interface_ROB.setJointValueTarget(JP);
+            move_group_interface_ROB->setJointValueTarget(JP);
             
             // 3. Assign SPEED and PLANNING METHOD (PTP, LIN, CIRC):
-            move_group_interface_ROB.setMaxVelocityScalingFactor(goal->speed);
-            move_group_interface_ROB.setPlannerId("PTP");
+            move_group_interface_ROB->setMaxVelocityScalingFactor(goal->speed);
+            move_group_interface_ROB->setPlannerId("PTP");
 
             // 4. PLAN:
             if (MoveJRES.RES == "LIMITS: OK"){
@@ -272,15 +272,15 @@ private:
         } else if (action == "MoveL" && param_ROB != "none"){
             
             // 1. Define POSE VECTOR:
-            auto POSE = move_group_interface_ROB.getCurrentPose();
+            auto POSE = move_group_interface_ROB->getCurrentPose();
             
             // 2. CALL MoveLAction for CALCULATIONS:
             auto TARGET_POSE = MoveLAction(goal->movel, POSE);
-            move_group_interface_ROB.setPoseTarget(TARGET_POSE);
+            move_group_interface_ROB->setPoseTarget(TARGET_POSE);
             
             // 3. Assign SPEED and PLANNING METHOD (PTP, LIN, CIRC):
-            move_group_interface_ROB.setMaxVelocityScalingFactor(goal->speed);
-            move_group_interface_ROB.setPlannerId("LIN");
+            move_group_interface_ROB->setMaxVelocityScalingFactor(goal->speed);
+            move_group_interface_ROB->setPlannerId("LIN");
 
             // 4. PLAN:
             MyPlan = plan_ROB();
@@ -289,17 +289,17 @@ private:
 
             // 1. Define JP VECTOR:
             std::vector<double> JP;
-            moveit::core::RobotStatePtr current_state = move_group_interface_ROB.getCurrentState(10);
+            moveit::core::RobotStatePtr current_state = move_group_interface_ROB->getCurrentState(10);
             current_state->copyJointGroupPositions(joint_model_group_ROB, JP);
             
             // 2. CALL MoveRAction for CALCULATIONS:
             MoveRSTRUCT MoveRRES = MoveRAction(goal->mover, JP, robotSPECS);
             JP = MoveRRES.JP;
-            move_group_interface_ROB.setJointValueTarget(JP);
+            move_group_interface_ROB->setJointValueTarget(JP);
             
             // 3. Assign SPEED and PLANNING METHOD (PTP, LIN, CIRC):
-            move_group_interface_ROB.setMaxVelocityScalingFactor(goal->speed);
-            move_group_interface_ROB.setPlannerId("PTP");
+            move_group_interface_ROB->setMaxVelocityScalingFactor(goal->speed);
+            move_group_interface_ROB->setPlannerId("PTP");
 
             // 4. PLAN:
             if (MoveRRES.RES == "LIMITS: OK"){
@@ -311,15 +311,15 @@ private:
         } else if (action == "MoveROT" && param_ROB != "none"){
             
             // 1. Define POSE VECTOR:
-            auto POSE = move_group_interface_ROB.getCurrentPose();
+            auto POSE = move_group_interface_ROB->getCurrentPose();
             
             // 2. CALL MoveROTAction for CALCULATIONS:
             auto TARGET_POSE = MoveROTAction(goal->moverot, POSE);
-            move_group_interface_ROB.setPoseTarget(TARGET_POSE);
+            move_group_interface_ROB->setPoseTarget(TARGET_POSE);
             
             // 3. Assign SPEED and PLANNING METHOD (PTP, LIN, CIRC):
-            move_group_interface_ROB.setMaxVelocityScalingFactor(goal->speed);
-            move_group_interface_ROB.setPlannerId("PTP");
+            move_group_interface_ROB->setMaxVelocityScalingFactor(goal->speed);
+            move_group_interface_ROB->setPlannerId("PTP");
 
             // 4. PLAN:
             MyPlan = plan_ROB();
@@ -327,15 +327,15 @@ private:
         } else if (action == "MoveRP" && param_ROB != "none"){
             
             // 1. Define POSE VECTOR:
-            auto POSE = move_group_interface_ROB.getCurrentPose();
+            auto POSE = move_group_interface_ROB->getCurrentPose();
             
             // 2. CALL MoveRPAction for CALCULATIONS:
             auto TARGET_POSE = MoveRPAction(goal->moverp, POSE);
-            move_group_interface_ROB.setPoseTarget(TARGET_POSE);
+            move_group_interface_ROB->setPoseTarget(TARGET_POSE);
             
             // 3. Assign SPEED and PLANNING METHOD (PTP, LIN, CIRC):
-            move_group_interface_ROB.setMaxVelocityScalingFactor(goal->speed);
-            move_group_interface_ROB.setPlannerId("PTP");
+            move_group_interface_ROB->setMaxVelocityScalingFactor(goal->speed);
+            move_group_interface_ROB->setPlannerId("PTP");
 
             // 4. PLAN:
             MyPlan = plan_ROB();
@@ -344,17 +344,17 @@ private:
             
             // 1. Define JP VECTOR:
             std::vector<double> JP;
-            moveit::core::RobotStatePtr current_state = move_group_interface_EE.getCurrentState(10);
+            moveit::core::RobotStatePtr current_state = move_group_interface_EE->getCurrentState(10);
             current_state->copyJointGroupPositions(joint_model_group_EE, JP);
 
             // 2. CALL MoveGAction for CALCULATIONS:
             MoveGSTRUCT MoveGRES = MoveGAction(goal->moveg, JP, eeSPECS);
             JP = MoveGRES.JP;
-            move_group_interface_EE.setJointValueTarget(JP);
+            move_group_interface_EE->setJointValueTarget(JP);
             
             // 3. Assign SPEED and PLANNING METHOD (PTP, LIN, CIRC):
-            move_group_interface_EE.setMaxVelocityScalingFactor(goal->speed);
-            move_group_interface_EE.setPlannerId("PTP");
+            move_group_interface_EE->setMaxVelocityScalingFactor(goal->speed);
+            move_group_interface_EE->setPlannerId("PTP");
 
             // 4. PLAN:
             if (MoveGRES.RES == "LIMITS: OK"){
@@ -368,7 +368,7 @@ private:
         // EXECUTE:
         if (RES == "PLANNING: OK"){
 
-            bool ExecSUCCESS = (move_group_interface_ROB.execute(MyPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+            bool ExecSUCCESS = (move_group_interface_ROB->execute(MyPlan) == moveit::core::MoveItErrorCode::SUCCESS);
 
             if (goal_handle->is_canceling()) {
                 RCLCPP_INFO(this->get_logger(), "Goal canceled.");
@@ -388,7 +388,7 @@ private:
             }
 
         } else if (RES == "PLANNING: OK (EE)"){
-            move_group_interface_EE.execute(MyPlan);
+            move_group_interface_EE->execute(MyPlan);
 
             if (goal_handle->is_canceling()) {
                 RCLCPP_INFO(this->get_logger(), "Goal canceled.");
@@ -473,22 +473,22 @@ int main(int argc, char ** argv)
     if (param_ROB != "none"){
         auto name = param_ROB + "_arm";
         
-        move_group_interface_ROB = MoveGroupInterface(node2, name);
-        move_group_interface_ROB.setPlanningPipelineId("move_group");
+        move_group_interface_ROB = std::make_shared<moveit::planning_interface::MoveGroupInterface>(node2, name);
+        move_group_interface_ROB->setPlanningPipelineId("move_group");
 
-        move_group_interface_ROB.setMaxVelocityScalingFactor(1.0);
-        move_group_interface_ROB.setMaxAccelerationScalingFactor(1.0);
+        move_group_interface_ROB->setMaxVelocityScalingFactor(1.0);
+        move_group_interface_ROB->setMaxAccelerationScalingFactor(1.0);
 
-        joint_model_group_ROB = move_group_interface_ROB.getCurrentState()->getJointModelGroup(name);
+        joint_model_group_ROB = move_group_interface_ROB->getCurrentState()->getJointModelGroup(name);
         RCLCPP_INFO(node_LOGGER->get_logger(), "MoveGroupInterface object created for ROBOT: %s", param_ROB.c_str());
     }
     // 2. END-EFFECTOR:
     if (param_EE != "none"){
-        move_group_interface_EE = MoveGroupInterface(node2, param_EE);
-        move_group_interface_EE.setPlanningPipelineId("move_group");
-        move_group_interface_EE.setMaxVelocityScalingFactor(1.0);
-        move_group_interface_EE.setMaxAccelerationScalingFactor(1.0);
-        joint_model_group_EE = move_group_interface_EE.getCurrentState()->getJointModelGroup(param_EE);
+        move_group_interface_EE = std::make_shared<moveit::planning_interface::MoveGroupInterface>(node2, param_EE);
+        move_group_interface_EE->setPlanningPipelineId("move_group");
+        move_group_interface_EE->setMaxVelocityScalingFactor(1.0);
+        move_group_interface_EE->setMaxAccelerationScalingFactor(1.0);
+        joint_model_group_EE = move_group_interface_EE->getCurrentState()->getJointModelGroup(param_EE);
         RCLCPP_INFO(node_LOGGER->get_logger(), "MoveGroupInterface object created for END-EFFECTOR: %s", param_EE.c_str());
     }
 

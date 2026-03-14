@@ -48,7 +48,7 @@ using namespace std::chrono_literals;
 #include "ros2srrc_data/msg/robpose.hpp"
 
 // Declaration of GLOBAL VARIABLE --> MoveIt!2 Interface:
-moveit::planning_interface::MoveGroupInterface move_group_interface_ROB;
+std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface_ROB;
 
 // Declaration of GLOBAL VARIABLE --> ROBOT PARAMETER:
 std::string param_ROB = "none";
@@ -89,7 +89,7 @@ private:
   void timer_callback()
   {
 
-    auto CP_INFO = move_group_interface_ROB.getCurrentPose();
+    auto CP_INFO = move_group_interface_ROB->getCurrentPose();
 
     POSE.x = CP_INFO.pose.position.x;
     POSE.y = CP_INFO.pose.position.y;
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     // MoveGroupInterface_ROB:
     using moveit::planning_interface::MoveGroupInterface;
     auto ROBname = param_ROB + "_arm";
-    move_group_interface_ROB = MoveGroupInterface(MoveIt2_NODE, ROBname);
+    move_group_interface_ROB = std::make_shared<moveit::planning_interface::MoveGroupInterface>(MoveIt2_NODE, ROBname);
 
     RCLCPP_INFO(node_LOGGER->get_logger(), "MoveGroupInterface object created for ROBOT: %s", param_ROB.c_str());
 
